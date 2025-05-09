@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-
 const chromium = require('chrome-aws-lambda');
 const puppeteer = require('puppeteer-core');
 
@@ -36,16 +35,19 @@ export class AppService {
       </html>
     `;
 
-    let browser = null;
+    let browser;
 
     try {
+      const isProduction = !!process.env.AWS_REGION || !!process.env.RENDER;
+
       browser = await puppeteer.launch({
         args: chromium.args,
-        executablePath: await chromium.executablePath || '/path/to/local/chromium', // Ensure a valid path here
+        executablePath: isProduction
+          ? await chromium.executablePath
+          : undefined,
         headless: chromium.headless,
         defaultViewport: chromium.defaultViewport,
       });
-      
 
       const page = await browser.newPage();
       await page.setContent(fullHtmlContent, { waitUntil: 'domcontentloaded' });
