@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import chromium from 'chrome-aws-lambda';
-import puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core';
 @Injectable()
 export class AppService {
   //////////////////////////////////////////////////here the logic for pdf generate/.////////////////////////////////////////
