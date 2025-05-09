@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-const chromium = require('chrome-aws-lambda').default || require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core').default || require('puppeteer-core');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 
 @Injectable()
 export class AppService {
@@ -39,18 +39,17 @@ export class AppService {
     let browser = null;
 
     try {
-      // Launching browser (either locally or Lambda/Render)
       browser = await puppeteer.launch({
         args: chromium.args,
-        executablePath: await chromium.executablePath || undefined,
+        executablePath: await chromium.executablePath || '/path/to/local/chromium', // Ensure a valid path here
         headless: chromium.headless,
         defaultViewport: chromium.defaultViewport,
       });
+      
 
       const page = await browser.newPage();
       await page.setContent(fullHtmlContent, { waitUntil: 'domcontentloaded' });
 
-      // Generating PDF
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
