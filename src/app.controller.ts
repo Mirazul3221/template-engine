@@ -23,4 +23,4 @@ export class AppController {
       res.status(500).send('Failed to generate PDF');
     }
   }
-}
+}//
