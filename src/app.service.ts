@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import chromium from 'chrome-aws-lambda';
-import * as puppeteer from 'puppeteer-core';
+import { Injectable, Logger } from '@nestjs/common';
+
+const chromium = require('chrome-aws-lambda').default || require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core').default || require('puppeteer-core');
+
 @Injectable()
 export class AppService {
-  //////////////////////////////////////////////////here the logic for pdf generate/.////////////////////////////////////////
+  private readonly logger = new Logger(AppService.name);
+
   async generatePdf(htmlContent: string): Promise<Buffer> {
     const headContent = `
       <head>
@@ -29,34 +32,42 @@ export class AppService {
     const fullHtmlContent = `
       <html>
         ${headContent}
-        <body>
-          ${htmlContent}
-        </body>
+        <body>${htmlContent}</body>
       </html>
     `;
 
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
-      defaultViewport: chromium.defaultViewport,
-    });
+    let browser = null;
 
-    const page = await browser.newPage();
-    await page.setContent(fullHtmlContent, { waitUntil: 'domcontentloaded' });
+    try {
+      // Launching browser (either locally or Lambda/Render)
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath || undefined,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
 
-    const pdfBuffer = await page.pdf({
-      format: 'a4',
-      printBackground: true,
-      margin: {
-        top: '2mm',
-        bottom: '2mm',
-        left: '2mm',
-        right: '2mm',
-      },
-    });
+      const page = await browser.newPage();
+      await page.setContent(fullHtmlContent, { waitUntil: 'domcontentloaded' });
 
-    await browser.close();
-    return pdfBuffer;
+      // Generating PDF
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '2mm',
+          bottom: '2mm',
+          left: '2mm',
+          right: '2mm',
+        },
+      });
+
+      return pdfBuffer;
+    } catch (error) {
+      this.logger.error('PDF generation error:', error);
+      throw new Error('Failed to generate PDF');
+    } finally {
+      if (browser) await browser.close();
+    }
   }
 }
